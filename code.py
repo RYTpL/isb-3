@@ -25,6 +25,7 @@ class Encryption:
             'iv_path': os.path.join(self.way, 'iv_path.txt')
         }
 
+
     def generation_key(self) -> None:
         """
         Key generation function
@@ -66,6 +67,7 @@ class Encryption:
         else:
             logging.info("The symmetric key is written")
 
+
     def __sym_key(self) -> bytes:
         """
         Symmetric encryption key decryption function
@@ -88,3 +90,40 @@ class Encryption:
             logging.warning(
                 f"{err} error when writing to a file {self.settings['symmetric_key']}")
         return symmetric_key
+    
+
+    def encryption(self, way: str) -> None:
+        """
+        The function of text encryption by the 3DES algorithm
+
+        """
+        way_e = way
+        symmetric_key = self.__sym_key()
+        try:
+            with open(way_e, 'r', encoding='utf-8') as f:
+                text = f.read()
+        except OSError as err:
+            logging.warning(f"{err} error when writing to a file {way_e}")
+        else:
+            logging.info("The text has been read")
+        padder = sym_padding.ANSIX923(128).padder()
+        padded_text = padder.update(bytes(text, 'utf-8')) + padder.finalize()
+        iv = os.urandom(8)
+        cipher = Cipher(algorithms.TripleDES(symmetric_key), modes.CBC(iv))
+        encryptor = cipher.encryptor()
+        c_text = encryptor.update(padded_text) + encryptor.finalize()
+        try:
+            with open(self.settings['iv_path'], 'wb') as key_file:
+                key_file.write(iv)
+        except OSError as err:
+            logging.warning(
+                f"{err} error when writing to a file {self.settings['iv_path']}")
+        try:
+            with open(self.settings['encrypted_file'], 'wb') as f_text:
+                f_text.write(c_text)
+        except OSError as err:
+            logging.warning(
+                f"{err} error when writing to a file {self.settings['encrypted_file']}")
+        else:
+            logging.info("The text is encrypted")
+            
