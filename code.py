@@ -24,3 +24,44 @@ class Encryption:
             'private_key': os.path.join(self.way, 'private_key.txt'),
             'iv_path': os.path.join(self.way, 'iv_path.txt')
         }
+
+    def generation_key(self) -> None:
+        """
+        Key generation function
+
+        """
+        keys = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048
+        )
+        private_key = keys
+        public_key = keys.public_key()
+        try:
+            with open(self.settings['public_key'], 'wb') as public_out:
+                public_out.write(public_key.public_bytes(encoding=serialization.Encoding.PEM,
+                                                         format=serialization.PublicFormat.SubjectPublicKeyInfo))
+        except OSError as err:
+            logging.warning(
+                f"{err} error when writing to a file {self.settings['public_key']}")
+        else:
+            logging.info("The public key is recorded")
+        try:
+            with open(self.settings['private_key'], 'wb') as private_out:
+                private_out.write(private_key.private_bytes(encoding=serialization.Encoding.PEM,
+                                                            format=serialization.PrivateFormat.TraditionalOpenSSL,
+                                                            encryption_algorithm=serialization.NoEncryption()))
+        except OSError as err:
+            logging.warning(
+                f"{err} error when writing to a file {self.settings['private_key']}")
+        else:
+            logging.info("The private key is recorded")
+        symmetric_key = os.urandom(self.size)
+        ciphertext = public_key.encrypt(symmetric_key, padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
+        try:
+            with open(self.settings['symmetric_key'], "wb") as f:
+                f.write(ciphertext)
+        except OSError as err:
+            logging.warning(
+                f"{err} error when writing to a file {self.settings['symmetric_key']}")
+        else:
+            logging.info("The symmetric key is written")
