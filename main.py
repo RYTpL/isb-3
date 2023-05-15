@@ -5,10 +5,18 @@ from code import Encryption as en
 
 class Terminal:
     def __init__(self):
+        """
+        initialization
+
+        """
         self.size = None
         self.key = None
 
     def run(self):
+        """
+        this function gives a choice of action
+
+        """
         while True:
             print("Select an action:")
             print("1. Set the key size")
@@ -33,10 +41,14 @@ class Terminal:
                 print("Wrong choice")
 
     def set_key_size(self):
+        """
+        this function allows you to select the key size
+
+        """
         print("Choose the key size")
-        print("1. 64 бита")
-        print("2. 128 бит")
-        print("3. 192 бита")
+        print("1. 64 bit")
+        print("2. 128 bit")
+        print("3. 192 bit")
 
         choice = input()
 
@@ -50,6 +62,10 @@ class Terminal:
             print("Wrong choice")
 
     def generate_keys(self):
+        """
+        in this function keys are generated
+
+        """
         if not self.size:
             print("The key size is not set")
             return
@@ -60,6 +76,10 @@ class Terminal:
         print("Keys generated")
 
     def encrypt_text(self):
+        """
+        in this function, the text is encrypted
+
+        """
         if not self.key:
             print("Keys are not generated")
             return
@@ -69,6 +89,10 @@ class Terminal:
         print("The text is encrypted")
 
     def decrypt_text(self):
+        """
+        in this function, the text is decrypted
+
+        """
         if not self.key:
             print("Keys not generated")
             return
