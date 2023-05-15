@@ -126,4 +126,38 @@ class Encryption:
                 f"{err} error when writing to a file {self.settings['encrypted_file']}")
         else:
             logging.info("The text is encrypted")
-            
+        
+
+    def decryption(self) -> str:
+        """
+       3DES algorithm text decryption function
+
+        Returns the path to the decrypted file
+        """
+        symmetric_key = self.__sym_key()
+        try:
+            with open(self.settings['encrypted_file'], 'rb') as f:
+                en_text = f.read()
+        except OSError as err:
+            logging.warning(
+                f"{err} error when reading from a file {self.settings['encrypted_file']}")
+        try:
+            with open(self.settings['iv_path'], "rb") as f:
+                iv = f.read()
+        except OSError as err:
+            logging.warning(
+                f"{err} error when reading from a file {self.settings['iv_path']}")
+        cipher = Cipher(algorithms.TripleDES(symmetric_key), modes.CBC(iv))
+        decryptor = cipher.decryptor()
+        dc_text = decryptor.update(en_text) + decryptor.finalize()
+        unpadder = sym_padding.ANSIX923(128).unpadder()
+        unpadded_dc_text = unpadder.update(dc_text) + unpadder.finalize()
+        try:
+            with open(self.settings['decrypted_file'], 'wb') as f:
+                f.write(unpadded_dc_text)
+        except OSError as err:
+            logging.warning(
+                f"{err} error writing to a file {self.settings['decrypted_file']}")
+        else:
+            logging.info("The text is decoded")
+        return self.settings['decrypted_file']
