@@ -8,22 +8,63 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms, modes)
 
 
-class Encryption:
+class Encryption(abc.ABC):
+    """Abstract base class for encryption classes."""
+
     def __init__(self, size: int, way: str) -> None:
         """
         initialization function
-
         """
         self.size = int(size/8)
         self.way = way
         self.settings = {
             'encrypted_file': os.path.join(self.way, 'encrypted_file.txt'),
             'decrypted_file': os.path.join(self.way, 'decrypted_file.txt'),
-            'symmetric_key': os.path.join(self.way, 'symmetric_key.txt'),
-            'public_key': os.path.join(self.way, 'public_key.txt'),
-            'private_key': os.path.join(self.way, 'private_key.txt'),
             'iv_path': os.path.join(self.way, 'iv_path.txt')
         }
+
+    @abc.abstractmethod
+    def encrypt(self) -> None:
+        """Encrypt data."""
+        pass
+
+    @abc.abstractmethod
+    def decrypt(self) -> None:
+        """Decrypt data."""
+        pass
+
+# symmetric_encryption
+from encryption import Encryption
+
+class SymmetricEncryption(Encryption):
+    """Class for symmetric encryption."""
+
+    def __init__(self, size: int, way: str) -> None:
+        super().__init__(size, way)
+        self.settings['symmetric_key'] = os.path.join(self.way, 'symmetric_key.txt')
+
+    def encrypt(self) -> None:
+        pass
+
+    def decrypt(self) -> None:
+        pass
+
+# asymmetric_encryption
+from encryption import Encryption
+
+class AsymmetricEncryption(Encryption):
+    """Class for asymmetric encryption."""
+
+    def __init__(self, size: int, way: str) -> None:
+        super().__init__(size, way)
+        self.settings['public_key'] = os.path.join(self.way, 'public_key.txt')
+        self.settings['private_key'] = os.path.join(self.way, 'private_key.txt')
+
+    def encrypt(self) -> None:
+        pass
+
+    def decrypt(self) -> None:
+        pass
 
 
     def generation_key(self) -> None:
