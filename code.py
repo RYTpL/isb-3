@@ -8,68 +8,26 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms, modes)
 
 
-class Encryption(abc.ABC):
-    """Abstract base class for encryption classes."""
-
+class Encryption:
     def __init__(self, size: int, way: str) -> None:
         """
-        initialization function
+        Функция инициализации
+
         """
         self.size = int(size/8)
         self.way = way
         self.settings = {
             'encrypted_file': os.path.join(self.way, 'encrypted_file.txt'),
             'decrypted_file': os.path.join(self.way, 'decrypted_file.txt'),
+            'symmetric_key': os.path.join(self.way, 'symmetric_key.txt'),
+            'public_key': os.path.join(self.way, 'public_key.txt'),
+            'private_key': os.path.join(self.way, 'private_key.txt'),
             'iv_path': os.path.join(self.way, 'iv_path.txt')
         }
 
-    @abc.abstractmethod
-    def encrypt(self) -> None:
-        """Encrypt data."""
-        pass
-
-    @abc.abstractmethod
-    def decrypt(self) -> None:
-        """Decrypt data."""
-        pass
-
-# symmetric_encryption
-from encryption import Encryption
-
-class SymmetricEncryption(Encryption):
-    """Class for symmetric encryption."""
-
-    def __init__(self, size: int, way: str) -> None:
-        super().__init__(size, way)
-        self.settings['symmetric_key'] = os.path.join(self.way, 'symmetric_key.txt')
-
-    def encrypt(self) -> None:
-        pass
-
-    def decrypt(self) -> None:
-        pass
-
-# asymmetric_encryption
-from encryption import Encryption
-
-class AsymmetricEncryption(Encryption):
-    """Class for asymmetric encryption."""
-
-    def __init__(self, size: int, way: str) -> None:
-        super().__init__(size, way)
-        self.settings['public_key'] = os.path.join(self.way, 'public_key.txt')
-        self.settings['private_key'] = os.path.join(self.way, 'private_key.txt')
-
-    def encrypt(self) -> None:
-        pass
-
-    def decrypt(self) -> None:
-        pass
-
-
     def generation_key(self) -> None:
         """
-        Key generation function
+        Функция генерации ключей
 
         """
         keys = rsa.generate_private_key(
@@ -84,9 +42,9 @@ class AsymmetricEncryption(Encryption):
                                                          format=serialization.PublicFormat.SubjectPublicKeyInfo))
         except OSError as err:
             logging.warning(
-                f"{err} error when writing to a file {self.settings['public_key']}")
+                f"{err} ошибка при записи в файл {self.settings['public_key']}")
         else:
-            logging.info("The public key is recorded")
+            logging.info("Публичный ключ записан")
         try:
             with open(self.settings['private_key'], 'wb') as private_out:
                 private_out.write(private_key.private_bytes(encoding=serialization.Encoding.PEM,
@@ -94,9 +52,9 @@ class AsymmetricEncryption(Encryption):
                                                             encryption_algorithm=serialization.NoEncryption()))
         except OSError as err:
             logging.warning(
-                f"{err} error when writing to a file {self.settings['private_key']}")
+                f"{err} ошибка при записи в файл {self.settings['private_key']}")
         else:
-            logging.info("The private key is recorded")
+            logging.info("Приватный ключ записан")
         symmetric_key = os.urandom(self.size)
         ciphertext = public_key.encrypt(symmetric_key, padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
         try:
@@ -104,16 +62,15 @@ class AsymmetricEncryption(Encryption):
                 f.write(ciphertext)
         except OSError as err:
             logging.warning(
-                f"{err} error when writing to a file {self.settings['symmetric_key']}")
+                f"{err} ошибка при записи в файл {self.settings['symmetric_key']}")
         else:
-            logging.info("The symmetric key is written")
-
+            logging.info("Симметричный ключ записан")
 
     def __sym_key(self) -> bytes:
         """
-        Symmetric encryption key decryption function
+        Функция расшифровки ключа симметричного шифрования
 
-        Returns the decrypted symmetric key
+        Возвращает расшифрованный симметричный ключ
         """
         try:
             with open(self.settings['private_key'], "rb") as f:
@@ -121,7 +78,7 @@ class AsymmetricEncryption(Encryption):
                     f.read(), password=None)
         except OSError as err:
             logging.warning(
-                f"{err} error when writing to a file {self.settings['private_key']}")
+                f"{err} ошибка при чтении из файла {self.settings['private_key']}")
         try:
             with open(self.settings['symmetric_key'], "rb") as f:
                 encrypted_symmetric_key = f.read()
@@ -129,13 +86,12 @@ class AsymmetricEncryption(Encryption):
                 mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
         except OSError as err:
             logging.warning(
-                f"{err} error when writing to a file {self.settings['symmetric_key']}")
+                f"{err} ошибка при чтении из файла {self.settings['symmetric_key']}")
         return symmetric_key
-    
 
     def encryption(self, way: str) -> None:
         """
-        The function of text encryption by the 3DES algorithm
+        Функция зашифровки текста алгоритмом 3DES
 
         """
         way_e = way
@@ -144,9 +100,9 @@ class AsymmetricEncryption(Encryption):
             with open(way_e, 'r', encoding='utf-8') as f:
                 text = f.read()
         except OSError as err:
-            logging.warning(f"{err} error when writing to a file {way_e}")
+            logging.warning(f"{err} ошибка при чтении из файла {way_e}")
         else:
-            logging.info("The text has been read")
+            logging.info("Текст прочитан")
         padder = sym_padding.ANSIX923(128).padder()
         padded_text = padder.update(bytes(text, 'utf-8')) + padder.finalize()
         iv = os.urandom(8)
@@ -158,22 +114,21 @@ class AsymmetricEncryption(Encryption):
                 key_file.write(iv)
         except OSError as err:
             logging.warning(
-                f"{err} error when writing to a file {self.settings['iv_path']}")
+                f"{err} ошибка при записи в файл {self.settings['iv_path']}")
         try:
             with open(self.settings['encrypted_file'], 'wb') as f_text:
                 f_text.write(c_text)
         except OSError as err:
             logging.warning(
-                f"{err} error when writing to a file {self.settings['encrypted_file']}")
+                f"{err} ошибка при записи в файл {self.settings['encrypted_file']}")
         else:
-            logging.info("The text is encrypted")
-        
+            logging.info("Тескт зашифрован")
 
     def decryption(self) -> str:
         """
-       3DES algorithm text decryption function
+        Функция расшифровки текста алгоритма 3DES
 
-        Returns the path to the decrypted file
+        Возвращает путь до расщифрованного файла
         """
         symmetric_key = self.__sym_key()
         try:
@@ -181,13 +136,13 @@ class AsymmetricEncryption(Encryption):
                 en_text = f.read()
         except OSError as err:
             logging.warning(
-                f"{err} error when reading from a file {self.settings['encrypted_file']}")
+                f"{err} ошибка при чтении из файла {self.settings['encrypted_file']}")
         try:
             with open(self.settings['iv_path'], "rb") as f:
                 iv = f.read()
         except OSError as err:
             logging.warning(
-                f"{err} error when reading from a file {self.settings['iv_path']}")
+                f"{err} ошибка при чтении из файла {self.settings['iv_path']}")
         cipher = Cipher(algorithms.TripleDES(symmetric_key), modes.CBC(iv))
         decryptor = cipher.decryptor()
         dc_text = decryptor.update(en_text) + decryptor.finalize()
@@ -198,7 +153,7 @@ class AsymmetricEncryption(Encryption):
                 f.write(unpadded_dc_text)
         except OSError as err:
             logging.warning(
-                f"{err} error writing to a file {self.settings['decrypted_file']}")
+                f"{err} ошибка при записи в файл {self.settings['decrypted_file']}")
         else:
-            logging.info("The text is decoded")
+            logging.info("Текст расшифрован")
         return self.settings['decrypted_file']
