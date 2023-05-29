@@ -1,13 +1,20 @@
 import re
 import sys
 import argparse
-from coding import Encryption as en
-
+from workspace import Encryption as en
 
 parser = argparse.ArgumentParser(description='A program for 3DES encryption and decryption')
 
 parser.add_argument('-s', '--size', type=int, choices=[64, 128, 192], help='Choose the key size in bits')
-parser.add_argument('-g', '--generate', action='store_true', help='Generate keys and save them in a directory')
+
+# Create a mutually exclusive group for the modes
+group = parser.add_mutually_exclusive_group(required=True)
+group.add_argument('-g', '--generate', action='store_true', help='Generate keys and save them in a directory')
+group.add_argument('-e', '--encrypt', action='store_true', help='Encrypt a file using the keys')
+group.add_argument('-d', '--decrypt', action='store_true', help='Decrypt a file using the keys')
+
+# Parse the arguments
+args = parser.parse_args()
 parser.add_argument('-e', '--encrypt', type=str, help='Encrypt a text file')
 parser.add_argument('-d', '--decrypt', type=str, help='Decrypt a text file')
 
