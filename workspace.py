@@ -6,6 +6,9 @@ from cryptography.hazmat.primitives import padding as sym_padding
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms, modes)
+from encryption import Encryption
+from encryption import Encryption
+
 
 
 class Encryption(abc.ABC):
@@ -33,9 +36,6 @@ class Encryption(abc.ABC):
         """Decrypt data."""
         pass
 
-# symmetric_encryption
-from encryption import Encryption
-
 class SymmetricEncryption(Encryption):
     """Class for symmetric encryption."""
 
@@ -48,9 +48,6 @@ class SymmetricEncryption(Encryption):
 
     def decrypt(self) -> None:
         pass
-
-# asymmetric_encryption
-from encryption import Encryption
 
 class AsymmetricEncryption(Encryption):
     """Class for asymmetric encryption."""
@@ -70,7 +67,6 @@ class AsymmetricEncryption(Encryption):
     def generation_key(self) -> None:
         """
         Key generation function
-
         """
         keys = rsa.generate_private_key(
             public_exponent=65537,
@@ -112,7 +108,6 @@ class AsymmetricEncryption(Encryption):
     def __sym_key(self) -> bytes:
         """
         Symmetric encryption key decryption function
-
         Returns the decrypted symmetric key
         """
         try:
@@ -136,7 +131,6 @@ class AsymmetricEncryption(Encryption):
     def encryption(self, way: str) -> None:
         """
         The function of text encryption by the 3DES algorithm
-
         """
         way_e = way
         symmetric_key = self.__sym_key()
@@ -172,7 +166,6 @@ class AsymmetricEncryption(Encryption):
     def decryption(self) -> str:
         """
        3DES algorithm text decryption function
-
         Returns the path to the decrypted file
         """
         symmetric_key = self.__sym_key()
