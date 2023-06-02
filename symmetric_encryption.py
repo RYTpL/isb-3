@@ -20,3 +20,25 @@ class SymmetricEncryption(Encryption):
 
     def decrypt(self) -> None:
         pass
+
+    def __sym_key(self) -> bytes:
+        """
+        Symmetric encryption key decryption function
+        Returns the decrypted symmetric key
+        """
+        try:
+            with open(self.settings['private_key'], "rb") as f:
+                private_key = serialization.load_pem_private_key(
+                    f.read(), password=None)
+        except OSError as err:
+            logging.warning(
+                f"{err} error when writing to a file {self.settings['private_key']}")
+        try:
+            with open(self.settings['symmetric_key'], "rb") as f:
+                encrypted_symmetric_key = f.read()
+            symmetric_key = private_key.decrypt(encrypted_symmetric_key, padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
+        except OSError as err:
+            logging.warning(
+                f"{err} error when writing to a file {self.settings['symmetric_key']}")
+        return symmetric_key
