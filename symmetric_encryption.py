@@ -1,44 +1,93 @@
 import logging
+import sys
 import os
 
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives import padding as sym_padding
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
-from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms, modes)
-from encryption import Encryption
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import padding
 
-class SymmetricEncryption(Encryption):
-    """Class for symmetric encryption."""
-
-    def __init__(self, size: int, way: str) -> None:
-        super().__init__(size, way)
-        self.settings['symmetric_key'] = os.path.join(self.way, 'symmetric_key.txt')
-
-    def encrypt(self) -> None:
-        pass
-
-    def decrypt(self) -> None:
-        pass
-
-    def __sym_key(self) -> bytes:
+logging.getLogger().setLevel(logging.INFO)
+class Symmetric:
+    """
+    Class for working with symmetric alg
+    """
+    def __init__(self)->None:
+        self.__key = None
+    
+    def generate_symmeric_key(self,json_settings: dict, key_lenght: int = 128)->None:
         """
-        Symmetric encryption key decryption function
-        Returns the decrypted symmetric key
+        Func that generates key of symmetric algorithm
+        """
+        if(key_lenght in [64,128,192]):
+            self.__key = os.urandom(int(key_lenght/8))
+            logging.info(f"Symmeric key is generated, lenght is {key_lenght}")
+        else:
+            logging.warning("Symmeric key is not generated. key_lenght is not correct")
+            sys.exit("Try again")
+    @property
+    def sym(self):
+        return self.__key
+    @sym.setter
+    def key(self, value):
+        self.__key = value
+        
+
+    def key_deserialization(self, file_name: str)->None:
+        """
+            Func that loads key from file
         """
         try:
-            with open(self.settings['private_key'], "rb") as f:
-                private_key = serialization.load_pem_private_key(
-                    f.read(), password=None)
-        except OSError as err:
-            logging.warning(
-                f"{err} error when writing to a file {self.settings['private_key']}")
+            with open(file_name, "rb") as file:
+                self.__key = file.read()
+            logging.info("Symmeric key is loaded")
+        except OSError as error:
+            logging.warning("Symmeric key is not loaded")
+            sys.exit(error)
+
+    def key_serialization(self, file_name:str)->None:
+        """
+            Func that saves key to file
+        """
         try:
-            with open(self.settings['symmetric_key'], "rb") as f:
-                encrypted_symmetric_key = f.read()
-            symmetric_key = private_key.decrypt(encrypted_symmetric_key, padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
-        except OSError as err:
-            logging.warning(
-                f"{err} error when writing to a file {self.settings['symmetric_key']}")
-        return symmetric_key
+            with open(file_name, "wb") as file:
+                file.write(self.__key)
+            logging.info("Symmeric key is saved")
+        except OSError as error:
+            logging.warning("Symmeric key is not saved")
+            sys.exit(error)
+
+    def encrypt(self, text: bytes, json_settings: dict, )->bytes:
+        """
+            Funs that encrypts text
+        """
+        padder = padding.ANSIX923(json_settings["keyLen"]).padder()
+        padded_text = padder.update(text)+padder.finalize()
+        iv = os.urandom(8)
+        cipher = Cipher(algorithms.TripleDES(self.__key), modes.CBC(iv))
+        encryptor = cipher.encryptor()
+        c_text = encryptor.update(padded_text) + encryptor.finalize()
+        try:
+            with open("./files/iv_path.txt", "wb") as file:
+                file.write(iv)
+        except OSError as error:
+            logging.warning("iv is not saved")
+            sys.exit(error)
+        logging.info("Text is encrypted with symmetric algorithm")
+        return c_text, json_settings
+
+    def decrypt(self, text:bytes, json_settings: dict)->bytes:
+        """
+            Func that decrypt text
+        """
+        try:
+            with open("./files/iv_path.txt", "rb") as file:
+                iv = file.read()
+        except OSError as error:
+            logging.warning("iv is not saved")
+            sys.exit(error)       
+        cipher = Cipher(algorithms.TripleDES(self.__key), modes.CBC(iv))
+        decryptor = cipher.decryptor()
+        dc_text = decryptor.update(text) + decryptor.finalize()
+        unpadder = padding.ANSIX923(json_settings["keyLen"]).unpadder()
+        unpadded_dc_text = unpadder.update(dc_text) + unpadder.finalize()
+        logging.info("Text is decrypted with symmetric algorithm")
+        return unpadded_dc_text
